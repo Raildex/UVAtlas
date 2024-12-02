@@ -908,16 +908,7 @@ int __cdecl wmain(_In_ int argc, _In_z_count_(argc) wchar_t* argv[])
                 break;
 
             case OPT_VBO:
-                if (dwOptions & (uint64_t(1) << OPT_SECOND_UV))
-                {
-                    wprintf(L"-uv2 is not supported by VBO\n");
-                    return 1;
-                }
-                if (dwOptions & ((uint64_t(1) << OPT_SDKMESH) | (uint64_t(1) << OPT_CMO) | (uint64_t(1) << OPT_WAVEFRONT_OBJ)))
-                {
-                    wprintf(L"Can only use one of sdkmesh, cmo, vbo, or wf\n");
-                    return 1;
-                }
+                
                 break;
 
             case OPT_WAVEFRONT_OBJ:
@@ -934,7 +925,7 @@ int __cdecl wmain(_In_ int argc, _In_z_count_(argc) wchar_t* argv[])
                 break;
 
             case OPT_SECOND_UV:
-                if (dwOptions & ((uint64_t(1) << OPT_VBO) | (uint64_t(1) << OPT_CMO) | (uint64_t(1) << OPT_WAVEFRONT_OBJ)))
+                if (dwOptions & ((uint64_t(1) << OPT_CMO) | (uint64_t(1) << OPT_WAVEFRONT_OBJ)))
                 {
                     wprintf(L"-uv2 is only supported by sdkmesh\n");
                     return 1;
@@ -1743,6 +1734,7 @@ int __cdecl wmain(_In_ int argc, _In_z_count_(argc) wchar_t* argv[])
 
                 if (oldIndex >= nVertsOriginal)
                 {
+                    assert(false);
                     oldIndex = dups[oldIndex - nVertsOriginal];
                 }
 

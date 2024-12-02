@@ -1242,14 +1242,18 @@ namespace VBO
     struct vertex_t
     {
         DirectX::XMFLOAT3 position;
+        DirectX::XMFLOAT4 color;
         DirectX::XMFLOAT3 normal;
+        DirectX::XMFLOAT4 tangent;
+        DirectX::XMFLOAT3 bitangent;
         DirectX::XMFLOAT2 textureCoordinate;
+        DirectX::XMFLOAT2 textureCoordinate2;
     };
 
 #pragma pack(pop)
 
     static_assert(sizeof(header_t) == 8, "VBO header size mismatch");
-    static_assert(sizeof(vertex_t) == 32, "VBO vertex size mismatch");
+    static_assert(sizeof(vertex_t) == 84, "VBO vertex size mismatch");
 } // namespace
 
 
@@ -1277,7 +1281,6 @@ HRESULT Mesh::ExportToVBO(const wchar_t* szFileName) const noexcept
     header.numIndices = static_cast<uint32_t>(mnFaces * 3);
 
     // Setup vertices/indices for VBO
-
     std::unique_ptr<vertex_t[]> vb(new (std::nothrow) vertex_t[mnVerts]);
     std::unique_ptr<uint16_t[]> ib(new (std::nothrow) uint16_t[header.numIndices]);
     if (!vb || !ib)
@@ -1288,8 +1291,12 @@ HRESULT Mesh::ExportToVBO(const wchar_t* szFileName) const noexcept
     for (size_t j = 0; j < mnVerts; ++j, ++vptr)
     {
         vptr->position = mPositions[j];
+        vptr->color = mColors[j];
         vptr->normal = mNormals[j];
+        vptr->tangent = mTangents[j];
+        vptr->bitangent = mBiTangents[j];
         vptr->textureCoordinate = mTexCoords[j];
+        vptr->textureCoordinate2 = mTexCoords2[j];
     }
 
     // Copy to IB
@@ -1430,17 +1437,25 @@ HRESULT Mesh::CreateFromVBO(const wchar_t* szFileName, std::unique_ptr<Mesh>& re
 
     // Copy VB to result
     std::unique_ptr<XMFLOAT3[]> pos(new (std::nothrow) XMFLOAT3[header.numVertices]);
+    std::unique_ptr<XMFLOAT4[]> col(new (std::nothrow) XMFLOAT4[header.numVertices]);
     std::unique_ptr<XMFLOAT3[]> norm(new (std::nothrow) XMFLOAT3[header.numVertices]);
+    std::unique_ptr<XMFLOAT4[]> tang(new (std::nothrow) XMFLOAT4[header.numVertices]);
+    std::unique_ptr<XMFLOAT3[]> bitang(new (std::nothrow) XMFLOAT3[header.numVertices]);
     std::unique_ptr<XMFLOAT2[]> texcoord(new (std::nothrow) XMFLOAT2[header.numVertices]);
-    if (!pos || !norm || !texcoord)
+    std::unique_ptr <XMFLOAT2[]> texcoord2(new (std::nothrow) XMFLOAT2[header.numVertices]);
+    if (!pos || !col || !norm || !tang || !bitang || !texcoord || !texcoord2)
         return E_OUTOFMEMORY;
 
     auto vptr = vb.get();
     for (size_t j = 0; j < header.numVertices; ++j, ++vptr)
     {
         pos[j] = vptr->position;
+        col[j] = vptr->color;
         norm[j] = vptr->normal;
+        tang[j] = vptr->tangent;
+        bitang[j] = vptr->bitangent;
         texcoord[j] = vptr->textureCoordinate;
+        texcoord2[j] = vptr->textureCoordinate2;
     }
 
     // Copy IB to result
@@ -1459,8 +1474,12 @@ HRESULT Mesh::CreateFromVBO(const wchar_t* szFileName, std::unique_ptr<Mesh>& re
     }
 
     result->mPositions.swap(pos);
+    result->mColors.swap(col);
     result->mNormals.swap(norm);
+    result->mTangents.swap(tang);
+    result->mBiTangents.swap(bitang);
     result->mTexCoords.swap(texcoord);
+    result->mTexCoords2.swap(texcoord2);
     result->mIndices.swap(indices);
     result->mnVerts = header.numVertices;
     result->mnFaces = header.numIndices / 3;
